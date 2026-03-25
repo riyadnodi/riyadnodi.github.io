@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ভিনটেজ লাভ লেটার - ৮০% স্ক্র্যাচে অটো আনলক</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #2a1a15 0%, #1f130f 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Courier New', 'Times New Roman', serif;
+            padding: 20px;
+        }
+
+        .envelope-container {
+            position: relative;
+            max-width: 800px;
+            width: 100%;
+            background: #e2d5b6;
+            background-image: radial-gradient(circle at 20% 35%, rgba(140, 90, 50, 0.1) 2%, transparent 2.5%);
+            background-size: 30px 30px;
+            border-radius: 16px;
+            box-shadow: 0 30px 50px rgba(0,0,0,0.5), inset 0 1px 4px rgba(255,245,200,0.6);
+            padding: 22px 18px 28px 18px;
+        }
+
+        .envelope-container::before {
+            content: "";
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 1px solid rgba(100, 65, 35, 0.5);
+            border-radius: 12px;
+            pointer-events: none;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.15);
+        }
+
+        .envelope-container::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(70, 40, 20, 0.12) 0%, rgba(0,0,0,0.03) 50%, rgba(50, 30, 15, 0.2) 100%);
+            border-radius: 16px;
+            pointer-events: none;
+        }
+
+        .scratch-layer {
+            position: relative;
+            background: #fef3e0;
+            background-image: repeating-linear-gradient(45deg, #ecdcaa 0px, #ecdcaa 1px, #fef0d4 1px, #fef0d4 6px);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: inset 0 0 0 1px #fff6e8, inset 0 0 0 3px #cbb786, 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        /* ক্যানভাস ওভারলে */
+        .canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 14px;
+            cursor: crosshair;
+            z-index: 20;
+            touch-action: none;
+            pointer-events: auto;
+        }
+        
+        /* আনলক হওয়ার পর ক্যানভাস নিষ্ক্রিয় */
+        .canvas-overlay.disabled {
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        /* লেখার কন্টেইনার */
+        .letter-scroll-container {
+            position: relative;
+            z-index: 5;
+            max-height: 480px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 10px;
+            background: transparent;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            pointer-events: auto;
+        }
+
+        /* কাস্টম স্ক্রোলবার */
+        .letter-scroll-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .letter-scroll-container::-webkit-scrollbar-track {
+            background: #d9cba3;
+            border-radius: 10px;
+        }
+        .letter-scroll-container::-webkit-scrollbar-thumb {
+            background: #9b6a42;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .letter-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: #7a4a2a;
+        }
+
+        .letter-content {
+            font-family: 'Courier New', 'Segoe UI', 'Times New Roman', serif;
+            color: #2f2418;
+            line-height: 1.65;
+            font-size: 1rem;
+            background: transparent;
+        }
+
+        .spanish-text {
+            text-align: right;
+            font-family: 'Great Vibes', 'Dancing Script', cursive;
+            font-size: 2rem;
+            font-weight: normal;
+            color: #aa4a2c;
+            text-shadow: 1px 1px 0px #f5e5c0;
+            margin-bottom: 25px;
+            border-right: 3px solid #c2814a;
+            padding-right: 20px;
+            transform: rotate(-0.5deg);
+        }
+
+        .heart-seal {
+            position: absolute;
+            bottom: 28px;
+            right: 28px;
+            width: 85px;
+            height: 85px;
+            background: radial-gradient(circle at 35% 35%, #e34f4f, #a11f1f);
+            clip-path: path("M42.5,16 C37,5 26,5 21,12.5 C16,5 5,5 0,16 C-5,26.5 0,37 10.5,42.5 C21,48 31.5,48 42.5,37.5 C53.5,48 64,48 74.5,42.5 C85,37 90,26.5 85,16 C80,5 69,5 63.5,12.5 C58.5,5 48,5 42.5,16Z");
+            transform: scale(0.85) rotate(6deg);
+            filter: drop-shadow(4px 6px 10px rgba(0,0,0,0.4));
+            z-index: 30;
+            pointer-events: none;
+        }
+        .heart-seal::after {
+            content: "❤️";
+            position: absolute;
+            top: 26px;
+            left: 30px;
+            font-size: 32px;
+            color: #ffefbf;
+            opacity: 0.85;
+        }
+
+        .postage-stamp {
+            position: absolute;
+            bottom: 25px;
+            left: 25px;
+            width: 72px;
+            height: 82px;
+            background: linear-gradient(145deg, #fff8ea, #f2e5ce);
+            border: 1px solid #bc8a58;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,250,210,0.9);
+            z-index: 30;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: monospace;
+            transform: rotate(-6deg);
+            border-radius: 3px;
+        }
+        .stamp-heart {
+            font-size: 36px;
+            color: #c72a2f;
+            margin-bottom: 5px;
+            text-shadow: 0 0 2px #c44;
+        }
+        .stamp-text {
+            font-size: 10px;
+            letter-spacing: 1px;
+            background: #f5e2c1;
+            padding: 2px 6px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .scratch-hint {
+            position: absolute;
+            bottom: 18px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 11px;
+            font-family: monospace;
+            background: rgba(0,0,0,0.6);
+            color: #fff0cf;
+            width: fit-content;
+            margin: 0 auto;
+            padding: 5px 14px;
+            border-radius: 40px;
+            backdrop-filter: blur(3px);
+            z-index: 35;
+            pointer-events: none;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .progress-badge {
+            position: absolute;
+            top: 18px;
+            right: 20px;
+            background: #4a2e24cc;
+            backdrop-filter: blur(6px);
+            padding: 5px 14px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-family: monospace;
+            color: #fff3e0;
+            z-index: 40;
+            font-weight: bold;
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+
+        .progress-badge.complete {
+            background: #9e3a2ecc;
+            animation: completePulse 0.5s ease;
+        }
+
+        @keyframes completePulse {
+            0% { transform: scale(1); background: #9e3a2ecc; }
+            50% { transform: scale(1.05); background: #c74534; }
+            100% { transform: scale(1); background: #9e3a2ecc; }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            pointer-events: none;
+            z-index: 1000;
+            animation: fall 1.5s linear forwards;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-20px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(300px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .spanish-text { font-size: 1.5rem; }
+            .letter-content { font-size: 0.85rem; }
+            .heart-seal { width: 65px; height: 65px; bottom: 18px; right: 18px; }
+            .heart-seal::after { font-size: 26px; top: 18px; left: 22px; }
+            .postage-stamp { width: 58px; height: 68px; bottom: 16px; left: 16px; }
+            .stamp-heart { font-size: 28px; }
+            .letter-scroll-container { max-height: 420px; }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Dancing+Script:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="envelope-container">
+    <div class="scratch-layer" id="scratchLayer">
+        <canvas id="scratchCanvas" class="canvas-overlay"></canvas>
+        
+        <!-- লেখার কন্টেইনার -->
+        <div class="letter-scroll-container" id="scrollContainer">
+            <div class="letter-content">
+                <div class="spanish-text">💌 Para El amor de mi vida 💌</div>
+                <div>
+                    <p style="margin-bottom: 14px;"><strong>এক জোড়া অবিচ্ছেদ্য প্রাণ</strong><br>
+                    সময়টা ২০২৪ সালের ৯ই জানুয়ারি। একরাশ মুগ্ধতা আর স্বপ্ন নিয়ে আমাদের পথচলা শুরু হয়েছিল। ক্যালেন্ডারের পাতা উল্টাতে উল্টাতে আজ ২০২৬ সালের ২৫শে মার্চ। দেখতে দেখতে সম্পর্কের বয়স হলো ৮০৬ দিন। ২ বছর ২ মাস ১৬ দিনের এই যাত্রায় আমাদের ভালোবাসার গল্পটা অনেক বড় হয়ে উঠেছে।</p>
+                    
+                    <p style="margin-bottom: 14px;">তবে এই পথচলাটা সবসময় যে খুব সহজ ছিল না। এই ৮০৬ দিনের মধ্যে কত শত বার যে আমাদের মান-অভিমান হয়েছে, কতবার রাগের মাথায় 'ছেড়ে চলে যাব' বলে দূরে যাওয়ার কথা হয়েছে, তার কোনো হিসাব নেই। ছোটখাটো ঝগড়া থেকে শুরু করে বড় রাগারাগী—ঝড় এসেছে বারবার। কিন্তু প্রতিবারই একটা অদ্ভুত টান কাজ করেছে। দিন শেষে যখন রাত নামে, সব রাগ ভুলে গিয়ে আমরা ঠিকই একে অপরের কাছে ফিরে এসেছি বুকে মাথা রেখে সব অভিমান ভুলে শক্ত করে আঁকড়ে ধরেছি।</p>
+                    
+                    <p style="margin-bottom: 14px;">অন্যদের সম্পর্কের মাঝে হয়তো বিচ্ছেদ আসে, কিন্তু আমাদের ক্ষেত্রে হয়েছে উল্টোটা। প্রতিটা ঝগড়া যেন আমাদের ভালোবাসাকে আরও একটু একটু করে শক্ত দিয়ে গেছে। বিচ্ছেদের কথা ভাবলে আমাদের বুকটা কেঁপে ওঠে, কারণ আমরা একে অপরকে ছাড়া থাকার কথা কল্পনাও করতে পারি না।</p>
+                    
+                    <p style="margin-bottom: 14px;">আমাদের স্বপ্ন এখন একটাই—এই যে শক্ত করে হাতটা ধরা, এটা যেন কখনো ছেড়ে যাওয়া না হয়। জীবনের শেষ প্রান্তে পৌঁছে যখন চুল পেকে যাবে, বয়স হয়ে যাবে, তখনও যেন ঠিক আজকের মতোই একে অপরের চোখের দিকে তাকিয়ে বলতে পারি, "আমি তোমাকে অনেক ভালোবাসি।"</p>
+                    
+                    <p style="margin-bottom: 8px;">মৃত্যু পর্যন্ত এই ভালোবাসার ছায়া যেন আমাদের জড়িয়ে রাখে—ইনশাআল্লাহ।</p>
+                    <div style="margin-top: 25px; margin-bottom: 15px; text-align: right; font-family: 'Dancing Script'; font-size: 1.25rem;">❤️ চিরকাল তোমারই ❤️</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="heart-seal"></div>
+    <div class="postage-stamp">
+        <div class="stamp-heart">❤️</div>
+        <div class="stamp-text">FOREVER</div>
+    </div>
+    
+    <div class="scratch-hint" id="hintText">✨ আঙুল বা মাউস দিয়ে খামের ওপর ঘষুন - ৮০% স্ক্র্যাচ হলে বাকিটা自動 খুলে যাবে ✨</div>
+    <div class="progress-badge" id="progressPercent">🔒 স্ক্র্যাচ: 0%</div>
+</div>
+
+<script>
+    (function() {
+        const canvas = document.getElementById('scratchCanvas');
+        const container = document.getElementById('scratchLayer');
+        const progressSpan = document.getElementById('progressPercent');
+        const hintText = document.getElementById('hintText');
+        const scrollContainer = document.getElementById('scrollContainer');
+        
+        let ctx = null;
+        let drawing = false;
+        let lastX = 0, lastY = 0;
+        let autoUnlocked = false;
+        
+        // ক্যানভাস রিসাইজ
+        function resizeCanvas() {
+            const rect = container.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+            
+            canvas.width = width;
+            canvas.height = height;
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
+            
+            if (ctx && !autoUnlocked) {
+                initScratchOverlay();
+            } else if (ctx && autoUnlocked) {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.fillStyle = 'rgba(0,0,0,1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+        
+        // ভিনটেজ ওভারলে
+        function initScratchOverlay() {
+            if (!ctx) return;
+            ctx.globalCompositeOperation = 'source-over';
+            
+            const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            grad.addColorStop(0, '#cbb282');
+            grad.addColorStop(0.6, '#b57c48');
+            grad.addColorStop(1, '#98653a');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // টেক্সচার
+            for (let i = 0; i < 800; i++) {
+                ctx.fillStyle = `rgba(60, 35, 15, ${Math.random() * 0.35})`;
+                ctx.beginPath();
+                ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 3 + 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // এন্টিক লাইন
+            for (let s = 0; s < 120; s++) {
+                ctx.strokeStyle = `rgba(40, 25, 8, ${Math.random() * 0.45})`;
+                ctx.lineWidth = Math.random() * 2.2;
+                ctx.beginPath();
+                ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+                ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+                ctx.stroke();
+            }
+            
+            // ভাঁজ ছায়া
+            ctx.fillStyle = 'rgba(40, 20, 5, 0.2)';
+            ctx.fillRect(0, 0, canvas.width * 0.15, canvas.height);
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.fillRect(canvas.width * 0.85, 0, canvas.width * 0.15, canvas.height);
+            
+            const edgeGrd = ctx.createLinearGradient(0, 0, canvas.width * 0.2, canvas.height * 0.1);
+            edgeGrd.addColorStop(0, 'rgba(70,35,12,0.5)');
+            edgeGrd.addColorStop(1, 'transparent');
+            ctx.fillStyle = edgeGrd;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        // স্ক্র্যাচ ফাংশন
+        function scratch(x, y, radius = 20) {
+            if (!ctx || autoUnlocked) return;
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0,0,0,1)';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x, y, radius * 0.65, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // স্ক্র্যাচ শতাংশ গণনা
+        function calculateScratchPercentage() {
+            if (!ctx || canvas.width === 0 || canvas.height === 0) return 0;
+            try {
+                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imgData.data;
+                let transparent = 0;
+                let total = data.length / 4;
+                for (let i = 3; i < data.length; i += 4) {
+                    if (data[i] < 128) transparent++;
+                }
+                let percent = (transparent / total) * 100;
+                return Math.min(100, Math.floor(percent));
+            } catch(e) {
+                return 0;
+            }
+        }
+        
+        // কনফেটি
+        function createConfetti() {
+            const colors = ['#ff4d4d', '#ff6b6b', '#ff8787', '#ffa0a0', '#ffb8b8', '#ffd1d1', '#ff6b4a', '#e63e3e'];
+            for (let i = 0; i < 60; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.classList.add('confetti');
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.top = '0px';
+                    confetti.style.width = Math.random() * 8 + 4 + 'px';
+                    confetti.style.height = Math.random() * 8 + 4 + 'px';
+                    confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0%';
+                    document.body.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 1500);
+                }, i * 20);
+            }
+        }
+        
+        // অটো আনলক - এখানে ক্যানভাস ডিজেবল করা হচ্ছে
+        function autoRevealRemaining() {
+            if (autoUnlocked) return;
+            autoUnlocked = true;
+            
+            // ক্যানভাস পুরো স্বচ্ছ করা
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillStyle = 'rgba(0,0,0,1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // ★★★ গুরুত্বপূর্ণ: ক্যানভাস ডিজেবল করা - এটাই স্ক্রোল ঠিক করবে ★★★
+            canvas.classList.add('disabled');
+            canvas.style.pointerEvents = 'none';
+            
+            // প্রগ্রেস ব্যাজ আপডেট
+            progressSpan.innerText = `❤️ সম্পূর্ণ উন্মোচিত! ❤️`;
+            progressSpan.classList.add('complete');
+            hintText.innerHTML = '✨ চিঠি সম্পূর্ণ উন্মোচিত! এখন নিচে স্ক্রোল করে পড়ুন ✨';
+            
+            // কনফেটি
+            createConfetti();
+            
+            // স্ক্রোল কন্টেইনারে ফোকাস দেওয়া
+            if (scrollContainer) {
+                scrollContainer.style.pointerEvents = 'auto';
+                scrollContainer.style.overflowY = 'auto';
+                // ছোট ডিভাইসের জন্য স্মুথ স্ক্রোল নিশ্চিত
+                scrollContainer.style.webkitOverflowScrolling = 'touch';
+            }
+        }
+        
+        // প্রগ্রেস আপডেট + ৮০% চেক
+        function updateProgressAndCheck() {
+            if (autoUnlocked) return;
+            
+            const percent = calculateScratchPercentage();
+            progressSpan.innerText = `🔒 স্ক্র্যাচ: ${percent}%`;
+            
+            if (percent >= 80 && !autoUnlocked) {
+                autoRevealRemaining();
+            }
+        }
+        
+        // ইভেন্ট হ্যান্ডলার
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            let canvasX = (clientX - rect.left) * scaleX;
+            let canvasY = (clientY - rect.top) * scaleY;
+            canvasX = Math.min(Math.max(0, canvasX), canvas.width);
+            canvasY = Math.min(Math.max(0, canvasY), canvas.height);
+            return { x: canvasX, y: canvasY };
+        }
+        
+        function startDraw(e) {
+            if (autoUnlocked) return;
+            e.preventDefault();
+            drawing = true;
+            const { x, y } = getCanvasCoords(e);
+            lastX = x;
+            lastY = y;
+            scratch(x, y, 22);
+            updateProgressAndCheck();
+        }
+        
+        function drawMove(e) {
+            if (!drawing || autoUnlocked) return;
+            e.preventDefault();
+            const { x, y } = getCanvasCoords(e);
+            const distance = Math.hypot(x - lastX, y - lastY);
+            if (distance < 3) {
+                scratch(x, y, 20);
+            } else {
+                const steps = Math.ceil(distance / 4);
+                for (let step = 0; step <= steps; step++) {
+                    const t = step / steps;
+                    const ix = lastX + (x - lastX) * t;
+                    const iy = lastY + (y - lastY) * t;
+                    scratch(ix, iy, 19);
+                }
+            }
+            lastX = x;
+            lastY = y;
+            updateProgressAndCheck();
+        }
+        
+        function endDraw(e) {
+            drawing = false;
+            e.preventDefault();
+            updateProgressAndCheck();
+        }
+        
+        canvas.addEventListener('mousedown', startDraw);
+        window.addEventListener('mousemove', drawMove);
+        window.addEventListener('mouseup', endDraw);
+        canvas.addEventListener('touchstart', startDraw, { passive: false });
+        canvas.addEventListener('touchmove', drawMove, { passive: false });
+        canvas.addEventListener('touchend', endDraw);
+        
+        // স্ক্রোল কন্টেইনার সেটআপ
+        if (scrollContainer) {
+            scrollContainer.style.overflowY = 'auto';
+            scrollContainer.style.overflowX = 'hidden';
+            scrollContainer.style.webkitOverflowScrolling = 'touch';
+            scrollContainer.style.pointerEvents = 'auto';
+            scrollContainer.style.cursor = 'default';
+        }
+        
+        function init() {
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            window.addEventListener('resize', () => {
+                const wasUnlocked = autoUnlocked;
+                resizeCanvas();
+                if (wasUnlocked && ctx) {
+                    ctx.globalCompositeOperation = 'destination-out';
+                    ctx.fillStyle = 'rgba(0,0,0,1)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    canvas.classList.add('disabled');
+                    canvas.style.pointerEvents = 'none';
+                } else if (!autoUnlocked) {
+                    updateProgressAndCheck();
+                }
+            });
+            
+            setTimeout(() => {
+                if (!autoUnlocked) {
+                    const initialPercent = calculateScratchPercentage();
+                    progressSpan.innerText = `🔒 স্ক্র্যাচ: ${initialPercent}%`;
+                }
+            }, 100);
+        }
+        
+        init();
+        
+        // ডিবাগ: স্ক্রোল কন্টেইনার চেক
+        console.log('Scroll container ready, height:', scrollContainer?.scrollHeight);
+    })();
+</script>
+</body>
+</html>
